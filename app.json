@@ -21,6 +21,12 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "updates": {
+      "url": "https://u.expo.dev/5d063a32-ecc3-4a89-acc8-c2277449d476"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "plugins": [
       "expo-audio",
       "expo-speech-recognition"
