@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "app-faim",
+    "slug": "app-faim",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Permitir que o app grave notas de voz nos lançamentos."
+        }
+      ],
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "Permitir reconhecimento de voz para transcrever anotações.",
+          "speechRecognitionPermission": "Permitir que o app converta sua fala em texto."
+        }
+      ]
+    ]
+  }
+}
