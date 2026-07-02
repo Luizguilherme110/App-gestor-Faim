@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   FlatList,
   Platform,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ObraCard from '../components/ObraCard';
 import { useObras } from '../hooks/useObras';
 import { colors, radius, shadow, spacing } from '../theme/theme';
@@ -230,12 +230,12 @@ export default function HomeScreen({ transactions, onAbrirObra }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, paddingTop: spacing.lg },
   resumo: {
     backgroundColor: colors.surface,
     padding: spacing.lg,
     borderRadius: radius.md,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     marginBottom: spacing.lg,
     ...shadow,
   },

@@ -39,15 +39,13 @@ export const useTransactions = () => {
   }, []);
 
   const addTransaction = useCallback(
-    async ({ tipo, valor, categoria, observacao, audioUri, audioDurationMillis }) => {
+    async ({ tipo, valor, categoria, observacao }) => {
       const nova = {
         id: generateId(),
         tipo,
         valor,
         categoria: categoria.trim(),
         observacao: observacao.trim(),
-        audioUri: audioUri || null,
-        audioDurationMillis: audioDurationMillis || 0,
         createdAt: new Date().toISOString(),
       };
       await persist([nova, ...transactions]);
@@ -57,7 +55,7 @@ export const useTransactions = () => {
   );
 
   const updateTransaction = useCallback(
-    async (id, { tipo, valor, categoria, observacao, audioUri, audioDurationMillis }) => {
+    async (id, { tipo, valor, categoria, observacao }) => {
       const proxima = transactions.map((t) =>
         t.id === id
           ? {
@@ -66,8 +64,6 @@ export const useTransactions = () => {
               valor,
               categoria: categoria.trim(),
               observacao: observacao.trim(),
-              audioUri: audioUri || null,
-              audioDurationMillis: audioDurationMillis || 0,
               updatedAt: new Date().toISOString(),
             }
           : t,

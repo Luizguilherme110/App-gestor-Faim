@@ -4,7 +4,6 @@ import { TIPO } from '../hooks/useTransactions';
 import { colors, radius, spacing } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 import { formatDate } from '../utils/date';
-import AudioPlayerButton from './AudioPlayerButton';
 
 // Item da lista.
 //  - toque curto  → editar (onEdit)
@@ -31,12 +30,6 @@ function TransactionItem({ item, onEdit, onDelete }) {
             {item.observacao ? ` — ${item.observacao}` : ''}
           </Text>
         )}
-        {item.audioUri ? (
-          <AudioPlayerButton
-            uri={item.audioUri}
-            durationMillis={item.audioDurationMillis}
-          />
-        ) : null}
       </View>
       <Text style={[styles.valor, { color: cor }]}>
         {ehGasto ? '- ' : '+ '}

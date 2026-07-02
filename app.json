@@ -15,25 +15,20 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+
+      "package": "com.leg110.appfaim"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "expo-audio",
-        {
-          "microphonePermission": "Permitir que o app grave notas de voz nos lançamentos."
-        }
-      ],
-      [
-        "@react-native-voice/voice",
-        {
-          "microphonePermission": "Permitir reconhecimento de voz para transcrever anotações.",
-          "speechRecognitionPermission": "Permitir que o app converta sua fala em texto."
-        }
-      ]
-    ]
+      "expo-audio"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5d063a32-ecc3-4a89-acc8-c2277449d476"
+      }
+    }
   }
 }

@@ -10,31 +10,28 @@ import { colors, radius, spacing } from '../theme/theme';
 //          Requer development build (não funciona no Expo Go padrão)
 // --------------------------------------------------------------------------
 
-let Voice = null;
-if (Platform.OS !== 'web') {
-  try {
-    Voice = require('@react-native-voice/voice').default;
-  } catch (_) {
-    // Expo Go sem dev build — funcionalidade desabilitada no celular
-  }
-}
+// No celular (Expo Go), o nativo do Voice é null — desabilitado por padrão.
+// Só funciona em dev/production builds com EAS.
+// Por segurança, sempre desabilitamos no celular — Voice falha no Expo Go.
+const voiceModuleAvailable = false; // Mude para true apenas após dev build EAS
 
 export default function VoiceNoteButton({ onTranscribed }) {
   const [gravando, setGravando] = useState(false);
-  const recognitionRef = useRef(null); // para Web Speech API
+  const [usando, setUsando] = useState(null); // 'web' | 'native' | null
+  const recognitionRef = useRef(null);
 
-  // ---------- limpeza ao desmontar ----------
+  // Botão desabilitado se não tiver voice no celular
+  const desabilitado = Platform.OS !== 'web' && !voiceModuleAvailable;
+
   useEffect(() => {
     return () => {
-      if (Platform.OS === 'web') {
+      if (usando === 'web') {
         recognitionRef.current?.abort();
-      } else {
-        Voice?.destroy().catch(() => {});
       }
     };
-  }, []);
+  }, [usando]);
 
-  // ======================= WEB =======================
+  // ======================= WEB / FALLBACK =======================
   const iniciarWeb = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -42,97 +39,105 @@ export default function VoiceNoteButton({ onTranscribed }) {
     if (!SpeechRecognition) {
       Alert.alert(
         'Não suportado',
-        'Seu navegador não suporta reconhecimento de voz. Tente Chrome ou Edge.',
+        'Seu navegador não suporta reconhecimento de voz. Tente Chrome, Edge ou Firefox.',
       );
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.lang = 'pt-BR';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.lang = 'pt-BR';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => setGravando(true);
+      recognition.onstart = () => {
+        setGravando(true);
+        setUsando('web');
+      };
 
-    recognition.onresult = (event) => {
-      const texto = event.results[0][0].transcript;
-      onTranscribed(texto);
+      recognition.onresult = (event) => {
+        const texto = event.results[0]?.[0]?.transcript;
+        if (texto) {
+          onTranscribed(texto);
+        }
+        setGravando(false);
+      };
+
+      recognition.onerror = (event) => {
+        setGravando(false);
+        if (event.error !== 'aborted') {
+          Alert.alert('Erro de reconhecimento', `${event.error}`);
+        }
+      };
+
+      recognition.onend = () => {
+        setGravando(false);
+        setUsando(null);
+      };
+
+      recognition.start();
+    } catch (e) {
       setGravando(false);
-    };
-
-    recognition.onerror = (event) => {
-      setGravando(false);
-      if (event.error !== 'aborted') {
-        Alert.alert('Erro', `Não foi possível reconhecer: ${event.error}`);
-      }
-    };
-
-    recognition.onend = () => setGravando(false);
-
-    recognition.start();
+      Alert.alert('Erro', 'Não foi possível iniciar o reconhecimento.');
+    }
   };
 
   const pararWeb = () => {
-    recognitionRef.current?.stop();
-    setGravando(false);
-  };
-
-  // ====================== NATIVE =====================
-  const iniciarNative = async () => {
-    if (!Voice) {
-      Alert.alert(
-        'Não disponível',
-        'O reconhecimento de voz requer um build de desenvolvimento.\n\nExecute: eas build --profile development',
-      );
-      return;
-    }
-
     try {
-      Voice.onSpeechStart = () => setGravando(true);
-      Voice.onSpeechEnd = () => setGravando(false);
-      Voice.onSpeechError = (e) => {
-        setGravando(false);
-        Alert.alert('Erro', e.error?.message || 'Falha no reconhecimento.');
-      };
-      Voice.onSpeechResults = (e) => {
-        const texto = e.value?.[0];
-        if (texto) onTranscribed(texto);
-        setGravando(false);
-      };
-
-      await Voice.start('pt-BR');
-    } catch (e) {
-      setGravando(false);
-      Alert.alert('Erro', 'Não foi possível iniciar o reconhecimento de voz.');
-    }
-  };
-
-  const pararNative = async () => {
-    try {
-      await Voice?.stop();
+      recognitionRef.current?.stop();
     } catch (_) {}
     setGravando(false);
   };
 
+  // ====================== NATIVE (Android/iOS) =====================
+  // Nunca chamado pois voiceModuleAvailable = false no Expo Go
+  const iniciarNative = async () => {};
+  const pararNative = async () => {};
+
   // =================== HANDLER UNIFICADO ===================
   const handlePress = () => {
+    if (desabilitado) {
+      Alert.alert(
+        '⚠️ Reconhecimento de voz não disponível',
+        'Este recurso só funciona com um build de desenvolvimento (EAS).\n\nPor enquanto, use o campo de texto para digitar suas anotações.',
+      );
+      return;
+    }
+
     if (gravando) {
-      Platform.OS === 'web' ? pararWeb() : pararNative();
+      if (usando === 'web') {
+        pararWeb();
+      } else if (usando === 'native') {
+        pararNative();
+      }
     } else {
-      Platform.OS === 'web' ? iniciarWeb() : iniciarNative();
+      if (Platform.OS === 'web') {
+        iniciarWeb();
+      } else {
+        iniciarNative();
+      }
     }
   };
 
   return (
     <TouchableOpacity
-      style={[styles.btn, gravando && styles.btnGravando]}
+      style={[
+        styles.btn,
+        gravando && styles.btnGravando,
+        desabilitado && styles.btnDesabilitado,
+      ]}
       onPress={handlePress}
       activeOpacity={0.75}
+      disabled={desabilitado}
     >
-      <Text style={styles.icon}>{gravando ? '🛑' : '🎤'}</Text>
-      <Text style={styles.label}>
-        {gravando ? 'Ouvindo… toque para parar' : 'Falar anotação'}
+      <Text style={styles.icon}>{gravando ? '🛑' : desabilitado ? '🔒' : '🎤'}</Text>
+      <Text style={[styles.label, desabilitado && styles.labelDesabilitado]}>
+        {desabilitado
+          ? 'Falar anotação (indisponível no Expo Go)'
+          : gravando
+          ? 'Ouvindo… toque para parar'
+          : 'Falar anotação'}
       </Text>
     </TouchableOpacity>
   );
@@ -148,7 +153,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     marginBottom: spacing.sm,
   },
-  btnGravando: { backgroundColor: colors.recording ?? '#fca5a5' },
+  btnGravando: {
+    backgroundColor: '#fecaca',
+    borderWidth: 2,
+    borderColor: colors.expense,
+  },
+  btnDesabilitado: {
+    backgroundColor: '#e5e7eb',
+    opacity: 0.6,
+  },
   icon: { fontSize: 18, marginRight: spacing.sm },
-  label: { color: colors.text, fontWeight: '600', flex: 1 },
+  label: { fontSize: 14, color: colors.text, fontWeight: '500' },
+  labelDesabilitado: { color: colors.textMuted },
 });

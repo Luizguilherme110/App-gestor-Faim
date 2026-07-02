@@ -15,7 +15,6 @@ import {
   formatBRL,
   formatDigitsAsCurrency,
 } from '../utils/currency';
-import AudioRecorderButton from './AudioRecorderButton';
 import VoiceNoteButton from './VoiceNoteButton';
 
 // Formulário de cadastro/edição. Quando `editing` é passado, entra em modo
@@ -26,7 +25,6 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
   const [valorDigits, setValorDigits] = useState('');
   const [categoria, setCategoria] = useState('');
   const [observacao, setObservacao] = useState('');
-  const [audio, setAudio] = useState(null); // { uri, durationMillis } | null
 
   const editando = !!editing;
   const ehGasto = tipo === TIPO.GASTO;
@@ -38,11 +36,6 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
       setValorDigits(String(Math.round((Number(editing.valor) || 0) * 100)));
       setCategoria(editing.categoria || '');
       setObservacao(editing.observacao || '');
-      setAudio(
-        editing.audioUri
-          ? { uri: editing.audioUri, durationMillis: editing.audioDurationMillis || 0 }
-          : null,
-      );
     }
   }, [editing]);
 
@@ -51,7 +44,6 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
     setValorDigits('');
     setCategoria(obraFixa || '');
     setObservacao('');
-    setAudio(null);
   };
 
   const handleSalvar = async () => {
@@ -77,8 +69,6 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
       valor,
       categoria: categoriaFinal,
       observacao,
-      audioUri: audio?.uri || null,
-      audioDurationMillis: audio?.durationMillis || 0,
     };
 
     try {
@@ -157,13 +147,6 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
         onTranscribed={(texto) =>
           setObservacao((prev) => (prev ? `${prev} ${texto}` : texto))
         }
-      />
-
-      <AudioRecorderButton
-        audioUri={audio?.uri}
-        durationMillis={audio?.durationMillis}
-        onRecorded={setAudio}
-        onClear={() => setAudio(null)}
       />
 
       <TouchableOpacity style={styles.salvarBtn} onPress={handleSalvar}>

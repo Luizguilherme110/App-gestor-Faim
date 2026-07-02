@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { formatBRL } from './currency';
 import { formatDate } from './date';
@@ -20,13 +20,12 @@ const createCSV = (obras, transactions) => {
     csv += `${'='.repeat(80)}\n`;
 
     // Cabeçalho da tabela
-    csv += 'Data,Tipo,Valor,Observação,Duração Áudio\n';
+    csv += 'Data,Tipo,Valor,Observação\n';
 
     // Dados
     if (obraTransactions.length > 0) {
       obraTransactions.forEach((t) => {
-        const duracao = t.audioDurationMillis ? `${(t.audioDurationMillis / 1000).toFixed(1)}s` : '-';
-        csv += `"${formatDate(t.createdAt)}","${t.tipo}","${formatBRL(t.valor)}","${t.observacao || '-'}","${duracao}"\n`;
+        csv += `"${formatDate(t.createdAt)}","${t.tipo}","${formatBRL(t.valor)}","${t.observacao || '-'}"\n`;
       });
     } else {
       csv += 'Nenhuma transação nesta obra\n';

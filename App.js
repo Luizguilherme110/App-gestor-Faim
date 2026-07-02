@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTransactions } from './src/hooks/useTransactions';
 import HomeScreen from './src/screens/HomeScreen';
 import ObraScreen from './src/screens/ObraScreen';
@@ -30,9 +31,11 @@ export default function App() {
   }
 
   return (
-    <HomeScreen
-      transactions={transactions}
-      onAbrirObra={(obra) => setObraAberta(obra)}
-    />
+    <SafeAreaProvider>
+      <HomeScreen
+        transactions={transactions}
+        onAbrirObra={(obra) => setObraAberta(obra)}
+      />
+    </SafeAreaProvider>
   );
 }

@@ -3,13 +3,13 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Dashboard from '../components/Dashboard';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
@@ -115,7 +115,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  btnVoltar: { paddingRight: spacing.md },
+  btnVoltar: {
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    minWidth: 80,
+    justifyContent: 'center',
+    marginLeft: -spacing.lg,
+  },
   btnVoltarTxt: { color: colors.primary, fontWeight: '600', fontSize: 15 },
   navTitulo: {
     flex: 1,
