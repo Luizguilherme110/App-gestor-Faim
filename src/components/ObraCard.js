@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors, radius, shadow, spacing } from '../theme/theme';
+import { radius, shadow, spacing, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 
 // Card que representa uma obra na HomeScreen.
 // Mostra nome, saldo e totais. Pressionar abre a ObraScreen.
 export default function ObraCard({ obra, gastos, ganhos, saldo, onPress, onLongPress }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const saldoNegativo = saldo < 0;
 
   return (
@@ -41,7 +43,7 @@ export default function ObraCard({ obra, gastos, ganhos, saldo, onPress, onLongP
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,

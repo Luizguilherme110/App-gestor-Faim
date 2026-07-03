@@ -31,22 +31,6 @@ export const saveTransactions = async (transactions) => {
   }
 };
 
-/**
- * Remove todas as transações de uma obra específica
- * @param {string} nomObra - Nome da obra
- * @returns {Promise<void>}
- */
-export const deleteTransactionsByObra = async (nomeObra) => {
-  try {
-    const transactions = await loadTransactions();
-    const filtradas = transactions.filter((t) => t.categoria !== nomeObra);
-    await saveTransactions(filtradas);
-  } catch (error) {
-    console.error('Erro ao deletar transações da obra:', error);
-    throw error;
-  }
-};
-
 // ========== OBRAS (PROJETOS) ==========
 
 export const loadObras = async () => {

@@ -1,6 +1,6 @@
-import React, { forwardRef, useCallback } from 'react';
+import React, { forwardRef, useCallback, useMemo } from 'react';
 import { Alert, FlatList, StyleSheet, Text } from 'react-native';
-import { colors, spacing } from '../theme/theme';
+import { spacing, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 import TransactionItem from './TransactionItem';
 
@@ -10,6 +10,8 @@ const TransactionList = forwardRef(function TransactionList(
   { transactions, onRemove, onEdit, ListHeaderComponent },
   ref,
 ) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const confirmarExclusao = useCallback(
     (item) => {
       Alert.alert(
@@ -20,7 +22,13 @@ const TransactionList = forwardRef(function TransactionList(
           {
             text: 'Excluir',
             style: 'destructive',
-            onPress: () => onRemove(item.id),
+            onPress: async () => {
+              try {
+                await onRemove(item.id);
+              } catch (e) {
+                Alert.alert('Erro', 'Não foi possível excluir o registro.');
+              }
+            },
           },
         ],
       );
@@ -44,6 +52,9 @@ const TransactionList = forwardRef(function TransactionList(
       ListHeaderComponent={ListHeaderComponent}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.content}
+      initialNumToRender={20}
+      maxToRenderPerBatch={20}
+      windowSize={7}
       ListEmptyComponent={
         <Text style={styles.empty}>Nenhum registro feito ainda.</Text>
       }
@@ -53,7 +64,7 @@ const TransactionList = forwardRef(function TransactionList(
 
 export default TransactionList;
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
   content: { paddingBottom: spacing.xl },
   empty: {
     textAlign: 'center',

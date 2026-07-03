@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { TIPO } from '../hooks/useTransactions';
-import { colors, radius, spacing } from '../theme/theme';
+import { radius, spacing, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 import { formatDate } from '../utils/date';
 
@@ -9,6 +9,8 @@ import { formatDate } from '../utils/date';
 //  - toque curto  → editar (onEdit)
 //  - toque longo  → excluir (onDelete)
 function TransactionItem({ item, onEdit, onDelete }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const ehGasto = item.tipo === TIPO.GASTO;
   const cor = ehGasto ? colors.expense : colors.income;
 
@@ -20,7 +22,7 @@ function TransactionItem({ item, onEdit, onDelete }) {
       style={[styles.item, { borderLeftColor: cor }]}
       onPress={() => onEdit(item)}
       onLongPress={() => onDelete(item)}
-      delayLongPress={350}
+      delayLongPress={500}
     >
       <View style={styles.info}>
         <Text style={styles.categoria}>{item.categoria}</Text>
@@ -42,7 +44,7 @@ function TransactionItem({ item, onEdit, onDelete }) {
 // Memoizado: cada item só re-renderiza se seus próprios dados mudarem.
 export default React.memo(TransactionItem);
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
   item: {
     backgroundColor: colors.surface,
     padding: 14,

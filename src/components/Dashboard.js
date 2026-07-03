@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius, shadow, spacing } from '../theme/theme';
+import { radius, shadow, spacing, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 
 // Painel de resumo (gastos, vendas e saldo). Componente puro de apresentação.
 export default function Dashboard({ totalGastos, totalGanhos, saldo }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const saldoNegativo = saldo < 0;
 
   return (
@@ -42,7 +44,7 @@ export default function Dashboard({ totalGastos, totalGanhos, saldo }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
   dashboard: {
     backgroundColor: colors.surface,
     padding: spacing.lg,

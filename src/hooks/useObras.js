@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { loadObras, saveObras, deleteTransactionsByObra } from '../services/storage';
+import { loadObras, saveObras } from '../services/storage';
 import { generateId } from '../utils/id';
 
 // Hook que gerencia a lista de obras (projetos).
@@ -7,6 +7,7 @@ import { generateId } from '../utils/id';
 export const useObras = () => {
   const [obras, setObras] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let ativo = true;
@@ -14,6 +15,8 @@ export const useObras = () => {
       try {
         const dados = await loadObras();
         if (ativo) setObras(dados);
+      } catch (e) {
+        if (ativo) setError('Não foi possível carregar as obras.');
       } finally {
         if (ativo) setLoading(false);
       }
@@ -26,6 +29,11 @@ export const useObras = () => {
     setObras(proxima);
   }, []);
 
+  // Usado para restaurar um backup completo, substituindo a lista inteira.
+  const substituirTodas = useCallback(async (novasObras) => {
+    await persist(novasObras);
+  }, [persist]);
+
   const addObra = useCallback(async (nome) => {
     const nova = {
       id: generateId(),
@@ -36,15 +44,7 @@ export const useObras = () => {
     return nova;
   }, [obras, persist]);
 
-  const removeObra = useCallback(async (id, deletarTransacoes = false) => {
-    const obraADeletar = obras.find((o) => o.id === id);
-    if (obraADeletar && deletarTransacoes) {
-      try {
-        await deleteTransactionsByObra(obraADeletar.nome);
-      } catch (error) {
-        console.error('Erro ao deletar transações:', error);
-      }
-    }
+  const removeObra = useCallback(async (id) => {
     await persist(obras.filter((o) => o.id !== id));
   }, [obras, persist]);
 
@@ -52,5 +52,5 @@ export const useObras = () => {
     await persist(obras.map((o) => o.id === id ? { ...o, nome: novoNome.trim() } : o));
   }, [obras, persist]);
 
-  return { obras, loading, addObra, removeObra, renameObra };
+  return { obras, loading, error, addObra, removeObra, renameObra, substituirTodas };
 };

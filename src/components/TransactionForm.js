@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { TIPO } from '../hooks/useTransactions';
-import { colors, radius, shadow, spacing } from '../theme/theme';
+import { radius, shadow, spacing, useTheme } from '../theme/theme';
 import {
   digitsToNumber,
   extractDigits,
@@ -21,6 +21,8 @@ import VoiceNoteButton from './VoiceNoteButton';
 // edição (prefill + botões de atualizar/cancelar). Devolve payload limpo.
 // `obraFixa` — quando definido, o campo categoria fica pré-preenchido e bloqueado.
 export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate, onCancelEdit }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [tipo, setTipo] = useState(TIPO.GASTO);
   const [valorDigits, setValorDigits] = useState('');
   const [categoria, setCategoria] = useState('');
@@ -164,7 +166,7 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
   form: {
     backgroundColor: colors.surface,
     padding: spacing.lg,
@@ -174,7 +176,7 @@ const styles = StyleSheet.create({
   },
   formEditando: { borderWidth: 1, borderColor: colors.primary },
   editBanner: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: colors.primaryBg,
     padding: spacing.sm,
     borderRadius: radius.sm,
     marginBottom: spacing.md,

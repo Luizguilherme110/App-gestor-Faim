@@ -2,11 +2,13 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { colors, radius, spacing } from '../theme/theme';
+import { radius, spacing, useTheme } from '../theme/theme';
 
 export default function VoiceNoteButton({ onTranscribed }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [gravando, setGravando] = useState(false);
   const recognitionRef = useRef(null); // apenas para Web
 
@@ -81,7 +83,7 @@ export default function VoiceNoteButton({ onTranscribed }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
   btn: {
     flexDirection: 'row',
     alignItems: 'center',

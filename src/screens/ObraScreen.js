@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Dashboard from '../components/Dashboard';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
-import { colors, spacing } from '../theme/theme';
+import { spacing, useTheme } from '../theme/theme';
 
 // Tela dedicada para uma obra específica.
 // Recebe transactions e CRUD via props (estado compartilhado com App.js),
@@ -27,7 +27,8 @@ export default function ObraScreen({
   removeTransaction,
   onVoltar,
 }) {
-
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [editing, setEditing] = useState(null);
   const listRef = useRef(null);
 
@@ -69,7 +70,7 @@ export default function ObraScreen({
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
 
       {/* Barra de navegação de volta */}
       <View style={styles.navbar}>
@@ -102,7 +103,7 @@ export default function ObraScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1, paddingHorizontal: spacing.lg },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },

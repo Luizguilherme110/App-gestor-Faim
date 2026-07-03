@@ -80,6 +80,35 @@ export const useTransactions = () => {
     [transactions, persist],
   );
 
+  // Vínculo obra↔lançamentos é feito pelo nome (categoria). Ao renomear ou
+  // excluir uma obra, os lançamentos precisam ser atualizados/removidos aqui
+  // também, senão ficam órfãos (invisíveis na obra e fora dos totais).
+  const renameCategoria = useCallback(
+    async (categoriaAntiga, categoriaNova) => {
+      const nova = categoriaNova.trim();
+      const proxima = transactions.map((t) =>
+        t.categoria === categoriaAntiga ? { ...t, categoria: nova } : t,
+      );
+      await persist(proxima);
+    },
+    [transactions, persist],
+  );
+
+  const removeByCategoria = useCallback(
+    async (categoria) => {
+      await persist(transactions.filter((t) => t.categoria !== categoria));
+    },
+    [transactions, persist],
+  );
+
+  // Usado para restaurar um backup completo, substituindo a lista inteira.
+  const substituirTodas = useCallback(
+    async (novasTransacoes) => {
+      await persist(novasTransacoes);
+    },
+    [persist],
+  );
+
   // Totais derivados — memoizados para não recalcular a cada render.
   const { totalGastos, totalGanhos, saldo } = useMemo(() => {
     let gastos = 0;
@@ -102,5 +131,8 @@ export const useTransactions = () => {
     addTransaction,
     updateTransaction,
     removeTransaction,
+    renameCategoria,
+    removeByCategoria,
+    substituirTodas,
   };
 };
