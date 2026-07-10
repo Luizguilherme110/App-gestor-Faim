@@ -21,8 +21,6 @@ import ObraCard from '../components/ObraCard';
 import { useObras } from '../hooks/useObras';
 import { radius, shadow, spacing, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
-import { PERIODOS, filtrarPorPeriodo } from '../utils/date';
-import { exportarParaExcel } from '../utils/export';
 import { exportarBackup, lerArquivoBackup } from '../utils/backup';
 
 // Tela inicial — lista de obras com resumo financeiro.
@@ -55,10 +53,8 @@ export default function HomeScreen({
   const [novoNomeObra, setNovoNomeObra] = useState('');
   const renomearInputRef = useRef(null);
 
-  // Menu de opções (caixa deslizante). etapa: 'principal' → lista de ações;
-  // 'periodo' → escolha do período do relatório.
+  // Menu de opções (caixa deslizante) — backup, ajuda, atualização.
   const [menuVisivel, setMenuVisivel] = useState(false);
-  const [menuEtapa, setMenuEtapa] = useState('principal');
 
   // Menu de ações de uma obra (toque longo no card).
   // etapa: 'acoes' → renomear/excluir; 'excluir' → confirmar exclusão.
@@ -114,35 +110,9 @@ export default function HomeScreen({
     }
   };
 
-  // ─── Menu de opções (exportar / backup) ───
-  const abrirMenu = () => {
-    setMenuEtapa('principal');
-    setMenuVisivel(true);
-  };
+  // ─── Menu de opções (backup / ajuda / atualização) ───
+  const abrirMenu = () => setMenuVisivel(true);
   const fecharMenu = () => setMenuVisivel(false);
-
-  const irParaEscolhaPeriodo = () => {
-    if (obras.length === 0) {
-      fecharMenu();
-      Alert.alert('Nenhuma obra', 'Crie uma obra antes de exportar o relatório.');
-      return;
-    }
-    setMenuEtapa('periodo');
-  };
-
-  const exportarComPeriodo = async (periodo) => {
-    fecharMenu();
-    try {
-      setProcessando(true);
-      const transacoesFiltradas = filtrarPorPeriodo(transactions, periodo);
-      await exportarParaExcel(obras, transacoesFiltradas);
-      Alert.alert('Pronto', 'Planilha gerada com sucesso!');
-    } catch (error) {
-      Alert.alert('Erro', error.message || 'Não foi possível gerar a planilha.');
-    } finally {
-      setProcessando(false);
-    }
-  };
 
   const handleExportarBackup = async () => {
     fecharMenu();
@@ -413,60 +383,35 @@ export default function HomeScreen({
       <BottomSheet
         visible={menuVisivel}
         onClose={fecharMenu}
-        titulo={menuEtapa === 'periodo' ? 'Período do relatório' : 'Opções'}
-        subtitulo={
-          menuEtapa === 'periodo'
-            ? 'Quais lançamentos incluir na planilha?'
-            : undefined
-        }
+        titulo="Opções"
       >
-        {menuEtapa === 'principal' ? (
-          <>
-            <SheetOption
-              icone="📊"
-              titulo="Exportar planilha"
-              descricao="Gera um relatório para abrir no Excel"
-              onPress={irParaEscolhaPeriodo}
-            />
-            <SheetOption
-              icone="💾"
-              titulo="Salvar cópia de segurança"
-              descricao="Guarda todos os dados em um arquivo"
-              onPress={handleExportarBackup}
-            />
-            <SheetOption
-              icone="📥"
-              titulo="Restaurar cópia de segurança"
-              descricao="Recupera os dados de um arquivo salvo"
-              onPress={handleImportarBackup}
-            />
-            <SheetOption
-              icone="❓"
-              titulo="Como usar o app"
-              descricao="Guia rápido para começar"
-              onPress={() => {
-                fecharMenu();
-                setTimeout(() => setAjudaVisivel(true), 300);
-              }}
-            />
-            <SheetOption
-              icone="🔄"
-              titulo="Buscar atualização"
-              descricao="Verifica se há uma versão mais nova"
-              onPress={handleBuscarAtualizacao}
-            />
-          </>
-        ) : (
-          <>
-            <SheetOption icone="📅" titulo="Tudo" descricao="Todos os lançamentos" onPress={() => exportarComPeriodo(PERIODOS.TUDO)} />
-            <SheetOption icone="📅" titulo="Este mês" onPress={() => exportarComPeriodo(PERIODOS.ESTE_MES)} />
-            <SheetOption icone="📅" titulo="Mês passado" onPress={() => exportarComPeriodo(PERIODOS.MES_PASSADO)} />
-            <SheetOption icone="📅" titulo="Últimos 3 meses" onPress={() => exportarComPeriodo(PERIODOS.ULTIMOS_3_MESES)} />
-            <TouchableOpacity style={styles.sheetVoltar} onPress={() => setMenuEtapa('principal')}>
-              <Text style={styles.sheetVoltarTxt}>← Voltar</Text>
-            </TouchableOpacity>
-          </>
-        )}
+        <SheetOption
+          icone="💾"
+          titulo="Salvar cópia de segurança"
+          descricao="Guarda todos os dados em um arquivo"
+          onPress={handleExportarBackup}
+        />
+        <SheetOption
+          icone="📥"
+          titulo="Restaurar cópia de segurança"
+          descricao="Recupera os dados de um arquivo salvo"
+          onPress={handleImportarBackup}
+        />
+        <SheetOption
+          icone="❓"
+          titulo="Como usar o app"
+          descricao="Guia rápido para começar"
+          onPress={() => {
+            fecharMenu();
+            setTimeout(() => setAjudaVisivel(true), 300);
+          }}
+        />
+        <SheetOption
+          icone="🔄"
+          titulo="Buscar atualização"
+          descricao="Verifica se há uma versão mais nova"
+          onPress={handleBuscarAtualizacao}
+        />
       </BottomSheet>
 
       {/* Menu de ações da obra (toque longo no card) */}

@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
@@ -13,7 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Dashboard from '../components/Dashboard';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
-import { spacing, useTheme } from '../theme/theme';
+import BottomSheet, { SheetOption } from '../components/BottomSheet';
+import { radius, spacing, useTheme } from '../theme/theme';
+import { exportarObraCSV, exportarObraPDF } from '../utils/exportObra';
 
 // Tela dedicada para uma obra específica.
 // Recebe transactions e CRUD via props (estado compartilhado com App.js),
@@ -30,6 +33,8 @@ export default function ObraScreen({
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [editing, setEditing] = useState(null);
+  const [exportMenu, setExportMenu] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const listRef = useRef(null);
 
   // Filtra apenas as transações desta obra
@@ -54,6 +59,31 @@ export default function ObraScreen({
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
+  // ─── Exportação (apenas desta obra) ───
+  const semMovimentacoes = () => {
+    if (visiveis.length === 0) {
+      Alert.alert('Nada para exportar', 'Esta obra ainda não tem movimentações.');
+      return true;
+    }
+    return false;
+  };
+
+  const exportar = async (formato, fn) => {
+    setExportMenu(false);
+    if (semMovimentacoes()) return;
+    try {
+      setExportando(true);
+      await fn();
+    } catch (error) {
+      Alert.alert('Erro', error.message || `Não foi possível exportar em ${formato}.`);
+    } finally {
+      setExportando(false);
+    }
+  };
+
+  const exportarExcel = () => exportar('Excel', () => exportarObraCSV(obra, visiveis));
+  const exportarPDF = () => exportar('PDF', () => exportarObraPDF(obra, visiveis));
+
   const header = (
     <View>
       <Dashboard totalGastos={totalGastos} totalGanhos={totalGanhos} saldo={saldo} />
@@ -64,7 +94,20 @@ export default function ObraScreen({
         onUpdate={updateTransaction}
         onCancelEdit={() => setEditing(null)}
       />
-      <Text style={styles.historicoTitle}>Movimentações — {obra.nome}</Text>
+      <View style={styles.historicoRow}>
+        <Text style={styles.historicoTitle}>Movimentações — {obra.nome}</Text>
+        <TouchableOpacity
+          style={[styles.btnExportar, exportando && styles.btnDisabled]}
+          onPress={() => setExportMenu(true)}
+          disabled={exportando}
+        >
+          {exportando ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Text style={styles.btnExportarTxt}>📤 Exportar</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -99,6 +142,27 @@ export default function ObraScreen({
           />
         )}
       </KeyboardAvoidingView>
+
+      {/* Menu de exportação desta obra */}
+      <BottomSheet
+        visible={exportMenu}
+        onClose={() => setExportMenu(false)}
+        titulo={`Exportar — ${obra.nome}`}
+        subtitulo="Em qual formato deseja salvar as movimentações desta obra?"
+      >
+        <SheetOption
+          icone="📊"
+          titulo="Excel (planilha)"
+          descricao="Arquivo CSV para abrir no Excel"
+          onPress={exportarExcel}
+        />
+        <SheetOption
+          icone="📄"
+          titulo="PDF"
+          descricao="Documento pronto para imprimir ou enviar"
+          onPress={exportarPDF}
+        />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -132,11 +196,28 @@ const makeStyles = (colors) => StyleSheet.create({
     color: colors.text,
   },
   navSpacer: { width: 60 }, // balanceia o botão de voltar
-  historicoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textMuted,
+  historicoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
+  historicoTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.textMuted,
+  },
+  btnExportar: {
+    backgroundColor: colors.primaryBg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    minHeight: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnDisabled: { opacity: 0.6 },
+  btnExportarTxt: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
 });
