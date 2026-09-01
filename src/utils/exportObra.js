@@ -20,10 +20,14 @@ const somaTotais = (transactions) => {
 };
 
 // Remove caracteres que atrapalham nome de arquivo.
-const nomeArquivo = (obraNome, ext) => {
+//
+// `sufixo` identifica o recorte exportado. Com um mês selecionado vira a
+// chave do mês ("2026-09"), senão vira a data de hoje. Assim dá para
+// diferenciar os arquivos na pasta de downloads sem abrir cada um.
+const nomeArquivo = (obraNome, ext, sufixo) => {
   const base = String(obraNome || 'obra').replace(/[^\p{L}\p{N}_-]+/gu, '_').slice(0, 40);
-  const timestamp = new Date().toISOString().split('T')[0];
-  return `Obra_${base}_${timestamp}.${ext}`;
+  const marca = sufixo || new Date().toISOString().split('T')[0];
+  return `Obra_${base}_${marca}.${ext}`;
 };
 
 const compartilhar = async (uri, mimeType, uti) => {
@@ -47,11 +51,14 @@ const celula = (v) => {
 
 const linhaCSV = (...celulas) => celulas.map(celula).join(SEP);
 
-export const exportarObraCSV = async (obra, transactions) => {
+// `periodo` opcional: `{ chave, rotulo }` de um mês específico. Sem ele, a
+// planilha sai com todos os lançamentos, como antes.
+export const exportarObraCSV = async (obra, transactions, periodo) => {
   const { gastos, ganhos, saldo } = somaTotais(transactions);
 
   const linhas = [];
   linhas.push(linhaCSV('Obra', obra.nome));
+  linhas.push(linhaCSV('Período', periodo ? periodo.rotulo : 'Todos os meses'));
   linhas.push(linhaCSV('Exportado em', new Date().toLocaleString('pt-BR')));
   linhas.push('');
   linhas.push(linhaCSV('Data', 'Tipo', 'Valor', 'Observação'));
@@ -63,7 +70,11 @@ export const exportarObraCSV = async (obra, transactions) => {
       );
     });
   } else {
-    linhas.push('Nenhuma movimentação nesta obra');
+    linhas.push(
+      periodo
+        ? `Nenhuma movimentação em ${periodo.rotulo}`
+        : 'Nenhuma movimentação nesta obra',
+    );
   }
 
   linhas.push('');
@@ -75,7 +86,7 @@ export const exportarObraCSV = async (obra, transactions) => {
   // ﻿ = BOM UTF-8 (faz o Excel reconhecer os acentos).
   const csv = '﻿' + linhas.join('\r\n');
 
-  const fileName = nomeArquivo(obra.nome, 'csv');
+  const fileName = nomeArquivo(obra.nome, 'csv', periodo?.chave);
   const filePath = `${FileSystem.documentDirectory}${fileName}`;
   await FileSystem.writeAsStringAsync(filePath, csv, {
     encoding: FileSystem.EncodingType.UTF8,

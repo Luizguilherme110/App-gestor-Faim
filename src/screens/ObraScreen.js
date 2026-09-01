@@ -17,6 +17,7 @@ import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
 import BottomSheet, { SheetOption } from '../components/BottomSheet';
 import { radius, spacing, type, useTheme } from '../theme/theme';
+import { filtrarPorMes, mesesDisponiveis } from '../utils/date';
 import { exportarObraCSV, exportarObraPDF } from '../utils/exportObra';
 
 // Tela dedicada para uma obra específica.
@@ -35,6 +36,7 @@ export default function ObraScreen({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [editing, setEditing] = useState(null);
   const [exportMenu, setExportMenu] = useState(false);
+  const [mesMenu, setMesMenu] = useState(false);
   const [exportando, setExportando] = useState(false);
   const listRef = useRef(null);
 
@@ -55,6 +57,9 @@ export default function ObraScreen({
     return { totalGastos: g, totalGanhos: r, saldo: r - g };
   }, [visiveis]);
 
+  // Meses que têm lançamento nesta obra, do mais recente para o mais antigo.
+  const meses = useMemo(() => mesesDisponiveis(visiveis), [visiveis]);
+
   const handleEdit = (item) => {
     setEditing(item);
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -70,8 +75,6 @@ export default function ObraScreen({
   };
 
   const exportar = async (formato, fn) => {
-    setExportMenu(false);
-    if (semMovimentacoes()) return;
     try {
       setExportando(true);
       await fn();
@@ -82,8 +85,29 @@ export default function ObraScreen({
     }
   };
 
-  const exportarExcel = () => exportar('Excel', () => exportarObraCSV(obra, visiveis));
-  const exportarPDF = () => exportar('PDF', () => exportarObraPDF(obra, visiveis));
+  // Excel passa por uma segunda pergunta: o cliente confere as contas mês a
+  // mês, como um extrato de banco, então a planilha sai de um mês só.
+  //
+  // Fechar uma caixa deslizante e abrir outra no mesmo instante deixa dois
+  // Modal montados ao mesmo tempo, o que trava a segunda no Android. Daí a
+  // espera antes de abrir o seletor de mês.
+  const abrirSeletorMes = () => {
+    setExportMenu(false);
+    if (semMovimentacoes()) return;
+    setTimeout(() => setMesMenu(true), 300);
+  };
+
+  const exportarExcelDoMes = (periodo) => {
+    setMesMenu(false);
+    const lista = periodo ? filtrarPorMes(visiveis, periodo.chave) : visiveis;
+    exportar('Excel', () => exportarObraCSV(obra, lista, periodo));
+  };
+
+  const exportarPDF = () => {
+    setExportMenu(false);
+    if (semMovimentacoes()) return;
+    exportar('PDF', () => exportarObraPDF(obra, visiveis));
+  };
 
   const header = (
     <View>
@@ -171,15 +195,39 @@ export default function ObraScreen({
         <SheetOption
           icone="grid"
           titulo="Planilha do Excel"
-          descricao="Arquivo CSV para fazer os cálculos"
-          onPress={exportarExcel}
+          descricao="Você escolhe o mês na próxima tela"
+          onPress={abrirSeletorMes}
         />
         <SheetOption
           icone="file-text"
           titulo="PDF"
-          descricao="Documento pronto para imprimir ou enviar"
+          descricao="Documento com todas as movimentações"
           onPress={exportarPDF}
         />
+      </BottomSheet>
+
+      {/* Seletor de mês da planilha */}
+      <BottomSheet
+        visible={mesMenu}
+        onClose={() => setMesMenu(false)}
+        titulo="Qual período?"
+        subtitulo="A planilha sai só com os lançamentos do mês escolhido."
+      >
+        <SheetOption
+          icone="layers"
+          titulo="Tudo"
+          descricao={`Todos os ${visiveis.length} lançamentos desta obra`}
+          onPress={() => exportarExcelDoMes(null)}
+        />
+        {meses.map((mes) => (
+          <SheetOption
+            key={mes.chave}
+            icone="calendar"
+            titulo={mes.rotulo}
+            descricao={mes.total === 1 ? '1 lançamento' : `${mes.total} lançamentos`}
+            onPress={() => exportarExcelDoMes(mes)}
+          />
+        ))}
       </BottomSheet>
     </SafeAreaView>
   );
