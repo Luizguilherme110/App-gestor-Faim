@@ -225,9 +225,33 @@ eas build --platform android --profile production
 
 ### Enviar atualização OTA (sem novo APK)
 ```bash
-eas update --branch preview --message "descrição do que mudou"
+npm run deploy -- --message "descrição do que mudou"
 ```
 O app verifica atualizações ao abrir e aplica na próxima inicialização.
+
+> **Publique sempre na branch `preview`.** É o que o script acima faz.
+>
+> Todos os APKs já distribuídos foram gerados com `--profile preview`, e o
+> canal fica gravado no APK no momento do build. Publicar em `--branch
+> production` sobe o pacote para um canal que nenhum aparelho instalado
+> escuta: o app responde "Tudo em dia" e nada chega. O nome do profile
+> `production` no `eas.json` engana — ele nunca foi usado para gerar um build.
+>
+> Para trocar isso de verdade seria preciso um build novo no canal
+> `production`, e o cliente teria que desinstalar o app atual (o que apaga os
+> dados dele) antes de instalar o novo. Enquanto isso não acontecer,
+> `preview` é o canal de produção deste projeto.
+
+Conferir o que está no ar:
+```bash
+npm run deploy:status
+```
+
+Voltar para a versão anterior, se uma atualização quebrar algo:
+```bash
+eas update:republish --branch preview --group <group-id-anterior>
+```
+Pegue o `group-id` com `eas update:list --branch preview`.
 
 > **OTA funciona apenas para mudanças em JavaScript/assets.**  
 > Mudanças em código nativo (novos pacotes nativos, permissões) exigem novo APK.
