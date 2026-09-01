@@ -59,8 +59,6 @@ src/
     exportObra.js             # Exportação de uma obra: CSV e PDF
     backup.js                 # Cópia de segurança em JSON (exportar / restaurar)
     id.js                     # generateId
-    export.js                 # NÃO USADO — ver Dívida Técnica
-    format.js                 # NÃO USADO — ver Dívida Técnica
 
   theme/
     theme.js                  # Design tokens + ThemeProvider (claro/escuro)
@@ -138,7 +136,6 @@ Biblioteca: `@react-native-async-storage/async-storage`
 **Funções exportadas:**
 - `loadTransactions()` / `saveTransactions(list)`
 - `loadObras()` / `saveObras(list)`
-- `forceSyncAllData()` — não usado, ver Dívida Técnica
 
 > **Não renomeie estas chaves.** Uma atualização OTA troca só o JavaScript e
 > não encosta no armazenamento do aparelho, então os dados do cliente
@@ -449,15 +446,6 @@ Pegue o `group-id` com `eas update:list --branch preview`.
 ---
 
 ## Dívida Técnica
-
-Código sem nenhum importador, mantido no repositório mas fora de uso. Apagar é seguro; foi deixado para decisão futura.
-
-| Arquivo / símbolo | Situação |
-|---|---|
-| `src/utils/export.js` | Exportação global antiga, substituída pela exportação por obra |
-| `src/utils/format.js` | `formatDuration`, sobra de uma gravação de áudio removida |
-| `forceSyncAllData` em `storage.js` | Nunca chamado |
-| `PERIODOS`, `periodoParaIntervalo`, `filtrarPorPeriodo` em `date.js` | Filtro de período antigo, substituído por `mesesDisponiveis` e `filtrarPorMes` |
 
 Pendências de arquitetura:
 

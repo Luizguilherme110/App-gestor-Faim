@@ -54,20 +54,3 @@ export const saveObras = async (obras) => {
     throw new Error('Não foi possível salvar os dados.');
   }
 };
-
-/**
- * Força a sincronização de todos os dados com o storage
- * Útil para garantir que tudo está persistido
- */
-export const forceSyncAllData = async () => {
-  try {
-    const transactions = await loadTransactions();
-    const obras = await loadObras();
-    await saveTransactions(transactions);
-    await saveObras(obras);
-    return { transactions, obras };
-  } catch (error) {
-    console.error('Erro ao sincronizar dados:', error);
-    throw error;
-  }
-};
