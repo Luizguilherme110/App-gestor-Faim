@@ -17,10 +17,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Updates from 'expo-updates';
 import AjudaModal from '../components/AjudaModal';
 import BottomSheet, { SheetOption } from '../components/BottomSheet';
+import Dashboard from '../components/Dashboard';
+import Icon from '../components/Icon';
 import ObraCard from '../components/ObraCard';
 import { useObras } from '../hooks/useObras';
-import { radius, shadow, spacing, useTheme } from '../theme/theme';
-import { formatBRL } from '../utils/currency';
+import { radius, spacing, type, useTheme } from '../theme/theme';
 import { exportarBackup, lerArquivoBackup } from '../utils/backup';
 
 // Tela inicial — lista de obras com resumo financeiro.
@@ -243,11 +244,37 @@ export default function HomeScreen({
     setNovoNomeObra('');
   };
 
-  const saldoNegativo = saldoGeral < 0;
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
+
+      {/* Cabeçalho do app: identidade à esquerda, ações à direita, uma linha só. */}
+      <View style={styles.appbar}>
+        <Text style={styles.appTitulo}>Gestor de Obras</Text>
+        <View style={styles.appbarAcoes}>
+          <TouchableOpacity
+            style={styles.btnIcone}
+            onPress={toggle}
+            accessibilityRole="button"
+            accessibilityLabel="Alternar modo claro e escuro"
+          >
+            <Icon name={mode === 'dark' ? 'sun' : 'moon'} size={19} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.btnIcone, processando && styles.btnDisabled]}
+            onPress={abrirMenu}
+            disabled={processando}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir opções"
+          >
+            {processando ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="settings" size={19} color={colors.text} />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {loading ? (
         <View style={styles.loading}>
@@ -267,64 +294,33 @@ export default function HomeScreen({
           <View>
             {!!erroCarregamento && (
               <View style={styles.erroBanner}>
-                <Text style={styles.erroBannerTxt}>⚠️ {erroCarregamento}</Text>
+                <Icon name="alert-triangle" size={16} color={colors.expense} />
+                <Text style={styles.erroBannerTxt}>{erroCarregamento}</Text>
               </View>
             )}
 
-            {/* Resumo geral */}
-            <View style={styles.resumo}>
-              <Text style={styles.resumoTitulo}>Gestão de Obras & Vendas</Text>
-              <View style={styles.resumoRow}>
-                <View style={[styles.resumoCard, { backgroundColor: colors.expenseBg }]}>
-                  <Text style={styles.resumoLabel}>Total Gastos</Text>
-                  <Text style={[styles.resumoValor, { color: colors.expense }]}>
-                    {formatBRL(totalGastos)}
-                  </Text>
-                </View>
-                <View style={[styles.resumoCard, { backgroundColor: colors.incomeBg }]}>
-                  <Text style={styles.resumoLabel}>Total Receitas</Text>
-                  <Text style={[styles.resumoValor, { color: colors.income }]}>
-                    {formatBRL(totalGanhos)}
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.saldoGeral}>
-                Saldo Geral:{' '}
-                <Text style={{ color: saldoNegativo ? colors.expense : colors.income }}>
-                  {formatBRL(saldoGeral)}
-                </Text>
-              </Text>
-            </View>
+            <Dashboard
+              totalGastos={totalGastos}
+              totalGanhos={totalGanhos}
+              saldo={saldoGeral}
+              labelSaldo="Saldo geral"
+            />
 
             {/* Cabeçalho da lista de obras */}
             <View style={styles.secaoHeader}>
-              <Text style={styles.secaoTitulo}>Minhas Obras</Text>
-              <View style={styles.botoesHeader}>
-                <TouchableOpacity
-                  style={styles.btnTema}
-                  onPress={toggle}
-                  accessibilityLabel="Alternar modo claro e escuro"
-                >
-                  <Text style={styles.btnTemaTxt}>{mode === 'dark' ? '☀️' : '🌙'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.btnSecundario, processando && styles.btnDisabled]}
-                  onPress={abrirMenu}
-                  disabled={processando}
-                >
-                  {processando ? (
-                    <ActivityIndicator size="small" color={colors.primary} />
-                  ) : (
-                    <Text style={styles.btnSecundarioTxt}>⚙️ Opções</Text>
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.btnNova}
-                  onPress={() => setCriando((v) => !v)}
-                >
-                  <Text style={styles.btnNovaTxt}>{criando ? '✕ Fechar' : '+ Nova obra'}</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.secaoTitulo}>Minhas obras</Text>
+              <TouchableOpacity
+                style={styles.btnNova}
+                onPress={() => setCriando((v) => !v)}
+                activeOpacity={0.8}
+              >
+                <Icon
+                  name={criando ? 'x' : 'plus'}
+                  size={16}
+                  color={colors.onPrimary}
+                />
+                <Text style={styles.btnNovaTxt}>{criando ? 'Fechar' : 'Nova obra'}</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Campo para criar nova obra */}
@@ -332,7 +328,7 @@ export default function HomeScreen({
               <View style={styles.novaObraRow}>
                 <TextInput
                   style={styles.novaObraInput}
-                  placeholder="Nome da obra (ex: Edifício Alpha)"
+                  placeholder="Ex: Edifício Alpha"
                   placeholderTextColor={colors.textFaint}
                   value={novaObra}
                   onChangeText={setNovaObra}
@@ -344,10 +340,17 @@ export default function HomeScreen({
                   style={[styles.btnCriar, !novaObra.trim() && styles.btnCriarDisabled]}
                   onPress={handleCriarObra}
                   disabled={!novaObra.trim()}
+                  activeOpacity={0.8}
                 >
                   <Text style={styles.btnCriarTxt}>Criar</Text>
                 </TouchableOpacity>
               </View>
+            )}
+
+            {/* A dica de toque longo vive aqui, uma vez, em vez de repetida
+                dentro de cada card da lista. */}
+            {obras.length > 0 && (
+              <Text style={styles.dica}>Segure um card para renomear ou excluir a obra.</Text>
             )}
           </View>
         }
@@ -367,10 +370,10 @@ export default function HomeScreen({
         ListEmptyComponent={
           !loading && (
             <View style={styles.vazio}>
-              <Text style={styles.vazioEmoji}>🏗️</Text>
+              <Icon name="layers" size={28} color={colors.textFaint} />
               <Text style={styles.vazioCabecalho}>Nenhuma obra criada</Text>
               <Text style={styles.vazioSub}>
-                Toque em "+ Nova obra" para começar.
+                Toque em "Nova obra" para começar a registrar gastos e vendas.
               </Text>
             </View>
           )
@@ -379,26 +382,26 @@ export default function HomeScreen({
       </KeyboardAvoidingView>
       )}
 
-      {/* Menu de opções (exportar planilha, backup) */}
+      {/* Menu de opções (backup, ajuda, atualização) */}
       <BottomSheet
         visible={menuVisivel}
         onClose={fecharMenu}
         titulo="Opções"
       >
         <SheetOption
-          icone="💾"
+          icone="hard-drive"
           titulo="Salvar cópia de segurança"
           descricao="Guarda todos os dados em um arquivo"
           onPress={handleExportarBackup}
         />
         <SheetOption
-          icone="📥"
+          icone="download"
           titulo="Restaurar cópia de segurança"
           descricao="Recupera os dados de um arquivo salvo"
           onPress={handleImportarBackup}
         />
         <SheetOption
-          icone="❓"
+          icone="help-circle"
           titulo="Como usar o app"
           descricao="Guia rápido para começar"
           onPress={() => {
@@ -407,7 +410,7 @@ export default function HomeScreen({
           }}
         />
         <SheetOption
-          icone="🔄"
+          icone="refresh-cw"
           titulo="Buscar atualização"
           descricao="Verifica se há uma versão mais nova"
           onPress={handleBuscarAtualizacao}
@@ -421,19 +424,19 @@ export default function HomeScreen({
         titulo={obraMenu?.nome}
         subtitulo={
           obraMenuEtapa === 'excluir'
-            ? 'Tem certeza? Escolha o que fazer com os lançamentos desta obra.'
+            ? 'Escolha o que fazer com os lançamentos desta obra.'
             : 'O que deseja fazer?'
         }
       >
         {obraMenuEtapa === 'acoes' ? (
           <>
             <SheetOption
-              icone="✏️"
+              icone="edit-3"
               titulo="Renomear obra"
               onPress={() => obraMenu && promptRenomear(obraMenu)}
             />
             <SheetOption
-              icone="🗑️"
+              icone="trash-2"
               titulo="Excluir obra"
               destrutivo
               onPress={() => setObraMenuEtapa('excluir')}
@@ -442,20 +445,21 @@ export default function HomeScreen({
         ) : (
           <>
             <SheetOption
-              icone="📂"
+              icone="folder"
               titulo="Excluir só a obra"
               descricao="Mantém os lançamentos no histórico"
               onPress={() => obraMenu && excluirObra(obraMenu, false)}
             />
             <SheetOption
-              icone="🗑️"
+              icone="trash-2"
               titulo="Excluir obra e lançamentos"
               descricao="Apaga tudo desta obra, sem volta"
               destrutivo
               onPress={() => obraMenu && excluirObra(obraMenu, true)}
             />
             <TouchableOpacity style={styles.sheetVoltar} onPress={() => setObraMenuEtapa('acoes')}>
-              <Text style={styles.sheetVoltarTxt}>← Voltar</Text>
+              <Icon name="chevron-left" size={16} color={colors.textMuted} />
+              <Text style={styles.sheetVoltarTxt}>Voltar</Text>
             </TouchableOpacity>
           </>
         )}
@@ -492,6 +496,7 @@ export default function HomeScreen({
               <TouchableOpacity
                 style={styles.modalBtnConfirmar}
                 onPress={confirmarRenomear}
+                activeOpacity={0.8}
               >
                 <Text style={styles.modalBtnConfirmarTxt}>Salvar</Text>
               </TouchableOpacity>
@@ -507,114 +512,111 @@ export default function HomeScreen({
 
 const makeStyles = (colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  btnTema: {
-    backgroundColor: colors.inputBg,
+  flex: { flex: 1 },
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  appbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    minHeight: 56,
+  },
+  appTitulo: { ...type.titulo, fontSize: 19, color: colors.textStrong, flex: 1 },
+  appbarAcoes: { flexDirection: 'row', gap: spacing.xs },
+  btnIcone: {
     width: 44,
     height: 44,
     borderRadius: radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  btnTemaTxt: { fontSize: 18 },
-  flex: { flex: 1 },
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  btnDisabled: { opacity: 0.6 },
+
   erroBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: colors.expenseBg,
+    borderWidth: 1,
+    borderColor: colors.expense,
     borderRadius: radius.sm,
     padding: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  erroBannerTxt: { color: colors.expense, fontWeight: '600', fontSize: 13 },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, paddingTop: spacing.lg },
-  resumo: {
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    ...shadow,
-  },
-  resumoTitulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    textAlign: 'center',
     marginBottom: spacing.md,
   },
-  resumoRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
-  resumoCard: { flex: 1, padding: spacing.md, borderRadius: radius.sm, alignItems: 'center' },
-  resumoLabel: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
-  resumoValor: { fontSize: 15, fontWeight: 'bold', marginTop: 2 },
-  saldoGeral: {
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 15,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
+  erroBannerTxt: { ...type.meta, flex: 1, color: colors.expense, fontWeight: '600' },
+
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
+    paddingTop: spacing.sm,
   },
+
   secaoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.xl,
     marginBottom: spacing.md,
   },
-  secaoTitulo: { fontSize: 16, fontWeight: 'bold', color: colors.text },
-  botoesHeader: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-  },
-  btnSecundario: {
-    backgroundColor: colors.primaryBg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnDisabled: { opacity: 0.6 },
-  btnSecundarioTxt: { color: colors.primary, fontWeight: 'bold', fontSize: 14 },
+  secaoTitulo: { ...type.titulo, color: colors.textStrong, flex: 1 },
   btnNova: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
     backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
-    minHeight: 44,
-    justifyContent: 'center',
+    minHeight: 42,
   },
-  btnNovaTxt: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  sheetVoltar: {
-    paddingVertical: spacing.md,
-    marginTop: spacing.xs,
-    alignItems: 'center',
-  },
-  sheetVoltarTxt: { color: colors.textMuted, fontWeight: '600', fontSize: 15 },
+  btnNovaTxt: { ...type.meta, fontWeight: '700', color: colors.onPrimary },
+
   novaObraRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   novaObraInput: {
     flex: 1,
-    backgroundColor: colors.inputBg,
-    padding: spacing.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.text,
+    minHeight: 48,
   },
   btnCriar: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     borderRadius: radius.sm,
     justifyContent: 'center',
+    minHeight: 48,
   },
-  btnCriarDisabled: { backgroundColor: colors.border },
-  btnCriarTxt: { color: '#fff', fontWeight: 'bold' },
-  vazio: { alignItems: 'center', marginTop: 48 },
-  vazioEmoji: { fontSize: 48, marginBottom: spacing.md },
-  vazioCabecalho: { fontSize: 16, fontWeight: 'bold', color: colors.textMuted, marginBottom: spacing.sm },
-  vazioSub: { color: colors.textFaint, textAlign: 'center' },
+  btnCriarDisabled: { backgroundColor: colors.borderStrong },
+  btnCriarTxt: { ...type.corpoForte, fontWeight: '700', color: colors.onPrimary },
+
+  dica: { ...type.micro, color: colors.textFaint, marginBottom: spacing.md },
+
+  sheetVoltar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    marginTop: spacing.xs,
+    minHeight: 48,
+  },
+  sheetVoltarTxt: { ...type.corpoForte, color: colors.textMuted },
+
+  vazio: { alignItems: 'center', marginTop: spacing.xxl, gap: spacing.sm },
+  vazioCabecalho: { ...type.corpoForte, color: colors.text },
+  vazioSub: { ...type.meta, color: colors.textMuted, textAlign: 'center' },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
@@ -623,18 +625,22 @@ const makeStyles = (colors) => StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.md,
     padding: spacing.lg,
-    ...shadow,
   },
-  modalTitulo: { fontSize: 17, fontWeight: 'bold', color: colors.text, marginBottom: spacing.xs },
-  modalSub: { fontSize: 13, color: colors.textMuted, marginBottom: spacing.md },
+  modalTitulo: { ...type.titulo, color: colors.textStrong },
+  modalSub: { ...type.meta, color: colors.textMuted, marginTop: spacing.xs, marginBottom: spacing.lg },
   modalInput: {
-    backgroundColor: colors.inputBg,
-    padding: spacing.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
     fontSize: 16,
     color: colors.text,
+    minHeight: 48,
     marginBottom: spacing.lg,
   },
   modalBotoes: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
@@ -642,13 +648,17 @@ const makeStyles = (colors) => StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
+    justifyContent: 'center',
+    minHeight: 44,
   },
-  modalBtnCancelarTxt: { color: colors.textMuted, fontWeight: '600', fontSize: 15 },
+  modalBtnCancelarTxt: { ...type.corpoForte, color: colors.textMuted },
   modalBtnConfirmar: {
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.xl,
     borderRadius: radius.sm,
     backgroundColor: colors.primary,
+    justifyContent: 'center',
+    minHeight: 44,
   },
-  modalBtnConfirmarTxt: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  modalBtnConfirmarTxt: { ...type.corpoForte, fontWeight: '700', color: colors.onPrimary },
 });

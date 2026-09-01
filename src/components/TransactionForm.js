@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Icon from './Icon';
 import { TIPO } from '../hooks/useTransactions';
-import { radius, shadow, spacing, useTheme } from '../theme/theme';
+import { radius, spacing, tabular, type, useTheme } from '../theme/theme';
 import {
   digitsToNumber,
   extractDigits,
@@ -27,6 +28,7 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
   const [valorDigits, setValorDigits] = useState('');
   const [categoria, setCategoria] = useState('');
   const [observacao, setObservacao] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
   const editando = !!editing;
   const ehGasto = tipo === TIPO.GASTO;
@@ -60,20 +62,16 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
       Alert.alert(
         'Atenção',
         ehGasto
-          ? 'Informe o nome da obra/fornecedor.'
-          : 'Informe o apartamento/comprador.',
+          ? 'Informe o nome da obra ou fornecedor.'
+          : 'Informe o apartamento ou comprador.',
       );
       return;
     }
 
-    const payload = {
-      tipo,
-      valor,
-      categoria: categoriaFinal,
-      observacao,
-    };
+    const payload = { tipo, valor, categoria: categoriaFinal, observacao };
 
     try {
+      setSalvando(true);
       if (editando) {
         await onUpdate(editing.id, payload);
       } else {
@@ -82,6 +80,8 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
       limpar();
     } catch (e) {
       Alert.alert('Erro', 'Não foi possível salvar o registro.');
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -90,60 +90,84 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
     onCancelEdit?.();
   };
 
+  const corTipo = ehGasto ? colors.expense : colors.income;
+
   return (
-    <View style={[styles.form, editando && styles.formEditando]}>
+    <View style={[styles.form, editando && { borderColor: colors.primary }]}>
       {editando && (
         <View style={styles.editBanner}>
-          <Text style={styles.editBannerText}>
-            Editando: {editing.categoria} ({formatBRL(editing.valor)})
+          <Icon name="edit-3" size={14} color={colors.primary} />
+          <Text style={styles.editBannerText} numberOfLines={1}>
+            Editando {formatBRL(editing.valor)}
           </Text>
         </View>
       )}
 
-      <View style={styles.switch}>
+      {/* Segmentado gasto/venda. O ativo ganha fundo elevado e cor no rótulo;
+          o inativo fica sobre o trilho neutro. */}
+      <View style={styles.segmento}>
         <TouchableOpacity
-          style={[styles.tipoBtn, ehGasto && styles.gastoAtivo]}
+          style={[styles.segmentoBtn, ehGasto && styles.segmentoAtivo]}
           onPress={() => setTipo(TIPO.GASTO)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: ehGasto }}
         >
-          <Text style={[styles.tipoTxt, ehGasto && styles.tipoAtivoTxt]}>
-            (-) Registrar Gasto
+          <Text
+            style={[styles.segmentoTxt, ehGasto && { color: colors.expense, fontWeight: '700' }]}
+          >
+            Registrar gasto
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tipoBtn, !ehGasto && styles.receitaAtivo]}
+          style={[styles.segmentoBtn, !ehGasto && styles.segmentoAtivo]}
           onPress={() => setTipo(TIPO.RECEITA)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: !ehGasto }}
         >
-          <Text style={[styles.tipoTxt, !ehGasto && styles.tipoAtivoTxt]}>
-            (+) Venda na Planta
+          <Text
+            style={[styles.segmentoTxt, !ehGasto && { color: colors.income, fontWeight: '700' }]}
+          >
+            Venda na planta
           </Text>
         </TouchableOpacity>
       </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Valor (R$)"
-        placeholderTextColor={colors.textFaint}
-        keyboardType="numeric"
-        value={formatDigitsAsCurrency(valorDigits)}
-        onChangeText={(t) => setValorDigits(extractDigits(t))}
-      />
+      <View style={styles.campo}>
+        <Text style={styles.label}>Valor</Text>
+        <TextInput
+          style={[styles.input, styles.inputValor, { color: corTipo }]}
+          placeholder="R$ 0,00"
+          placeholderTextColor={colors.textFaint}
+          keyboardType="numeric"
+          value={formatDigitsAsCurrency(valorDigits)}
+          onChangeText={(t) => setValorDigits(extractDigits(t))}
+        />
+      </View>
 
-      <TextInput
-        style={[styles.input, obraFixa && styles.inputBloqueado]}
-        placeholder={ehGasto ? 'Nome da Obra / Fornecedor' : 'Apartamento / Comprador'}
-        placeholderTextColor={colors.textFaint}
-        value={obraFixa || categoria}
-        onChangeText={obraFixa ? undefined : setCategoria}
-        editable={!obraFixa}
-      />
+      <View style={styles.campo}>
+        <Text style={styles.label}>
+          {ehGasto ? 'Obra ou fornecedor' : 'Apartamento ou comprador'}
+        </Text>
+        <TextInput
+          style={[styles.input, obraFixa && styles.inputBloqueado]}
+          placeholder={ehGasto ? 'Ex: Edifício Alpha' : 'Ex: Apto 21'}
+          placeholderTextColor={colors.textFaint}
+          value={obraFixa || categoria}
+          onChangeText={obraFixa ? undefined : setCategoria}
+          editable={!obraFixa}
+        />
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Alguma anotação extra..."
-        placeholderTextColor={colors.textFaint}
-        value={observacao}
-        onChangeText={setObservacao}
-      />
+      <View style={styles.campo}>
+        <Text style={styles.label}>Anotação</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 20 sacos de cimento"
+          placeholderTextColor={colors.textFaint}
+          value={observacao}
+          onChangeText={setObservacao}
+        />
+      </View>
 
       <VoiceNoteButton
         onTranscribed={(texto) =>
@@ -151,9 +175,14 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
         }
       />
 
-      <TouchableOpacity style={styles.salvarBtn} onPress={handleSalvar}>
+      <TouchableOpacity
+        style={[styles.salvarBtn, salvando && styles.btnDisabled]}
+        onPress={handleSalvar}
+        disabled={salvando}
+        activeOpacity={0.8}
+      >
         <Text style={styles.salvarTxt}>
-          {editando ? 'Atualizar Registro' : 'Salvar Registro'}
+          {editando ? 'Atualizar registro' : 'Salvar registro'}
         </Text>
       </TouchableOpacity>
 
@@ -169,51 +198,72 @@ export default function TransactionForm({ editing, obraFixa, onSubmit, onUpdate,
 const makeStyles = (colors) => StyleSheet.create({
   form: {
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.lg,
     borderRadius: radius.md,
     marginTop: spacing.lg,
-    ...shadow,
   },
-  formEditando: { borderWidth: 1, borderColor: colors.primary },
   editBanner: {
-    backgroundColor: colors.primaryBg,
-    padding: spacing.sm,
-    borderRadius: radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     marginBottom: spacing.md,
   },
-  editBannerText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
-  switch: { flexDirection: 'row', marginBottom: spacing.md },
-  tipoBtn: {
+  editBannerText: { ...type.meta, color: colors.primary, fontWeight: '600' },
+  segmento: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.sm,
+    padding: 3,
+    marginBottom: spacing.lg,
+  },
+  segmentoBtn: {
     flex: 1,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: colors.border,
+    justifyContent: 'center',
+    borderRadius: radius.sm - 3,
+    minHeight: 44,
   },
-  gastoAtivo: { borderBottomColor: colors.expense },
-  receitaAtivo: { borderBottomColor: colors.income },
-  tipoTxt: { fontWeight: '600', color: colors.textMuted },
-  tipoAtivoTxt: { color: colors.textStrong, fontWeight: 'bold' },
+  segmentoAtivo: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  segmentoTxt: { ...type.meta, fontWeight: '600', color: colors.textMuted },
+  campo: { marginBottom: spacing.md },
+  label: { ...type.micro, color: colors.textMuted, marginBottom: spacing.xs },
   input: {
-    backgroundColor: colors.inputBg,
-    padding: spacing.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderRadius: radius.sm,
     fontSize: 16,
-    marginBottom: spacing.sm,
     color: colors.text,
+    minHeight: 48,
   },
-  inputBloqueado: {
-    backgroundColor: colors.border,
-    color: colors.textMuted,
-  },
+  inputValor: { ...tabular, fontSize: 22, fontWeight: '700' },
+  inputBloqueado: { color: colors.textMuted },
   salvarBtn: {
     backgroundColor: colors.primary,
-    padding: 14,
+    paddingVertical: spacing.md,
     borderRadius: radius.sm,
     alignItems: 'center',
-    marginTop: spacing.xs,
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    minHeight: 50,
   },
-  salvarTxt: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  cancelarBtn: { padding: spacing.md, alignItems: 'center', marginTop: spacing.xs },
-  cancelarTxt: { color: colors.textMuted, fontWeight: '600' },
+  btnDisabled: { opacity: 0.6 },
+  salvarTxt: { ...type.corpoForte, fontSize: 16, fontWeight: '700', color: colors.onPrimary },
+  cancelarBtn: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  cancelarTxt: { ...type.corpoForte, color: colors.textMuted },
 });

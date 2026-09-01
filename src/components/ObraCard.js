@@ -1,44 +1,49 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { radius, shadow, spacing, useTheme } from '../theme/theme';
+import Icon from './Icon';
+import { radius, spacing, tabular, type, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 
 // Card que representa uma obra na HomeScreen.
-// Mostra nome, saldo e totais. Pressionar abre a ObraScreen.
+// Toque abre a ObraScreen; toque longo abre o menu de renomear/excluir.
+//
+// A dica de uso saiu daqui: repetida em cada card ela virava ruído. Agora
+// aparece uma vez só, acima da lista.
 export default function ObraCard({ obra, gastos, ganhos, saldo, onPress, onLongPress }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const saldoNegativo = saldo < 0;
+  const corSaldo = saldo < 0 ? colors.expense : colors.income;
 
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
       onLongPress={onLongPress}
-      activeOpacity={0.75}
+      activeOpacity={0.7}
       delayLongPress={500}
+      accessibilityRole="button"
+      accessibilityLabel={`${obra.nome}, saldo ${formatBRL(saldo)}`}
+      accessibilityHint="Toque para abrir. Toque longo para renomear ou excluir."
     >
-      <View style={styles.header}>
+      <View style={styles.topo}>
         <Text style={styles.nome} numberOfLines={1}>{obra.nome}</Text>
-        <Text style={[styles.saldo, { color: saldoNegativo ? colors.expense : colors.income }]}>
-          {formatBRL(saldo)}
+        <Icon name="chevron-right" size={18} color={colors.textFaint} />
+      </View>
+
+      <Text style={[styles.saldo, { color: corSaldo }]} numberOfLines={1}>
+        {formatBRL(saldo)}
+      </Text>
+
+      <View style={styles.meta}>
+        <Text style={styles.metaItem}>
+          <Text style={styles.metaLabel}>Gastos </Text>
+          <Text style={[styles.metaValor, { color: colors.expense }]}>{formatBRL(gastos)}</Text>
+        </Text>
+        <Text style={styles.metaItem}>
+          <Text style={styles.metaLabel}>Vendas </Text>
+          <Text style={[styles.metaValor, { color: colors.income }]}>{formatBRL(ganhos)}</Text>
         </Text>
       </View>
-
-      <View style={styles.row}>
-        <View style={[styles.pill, { backgroundColor: colors.expenseBg }]}>
-          <Text style={[styles.pillLabel, { color: colors.expense }]}>
-            Gastos: {formatBRL(gastos)}
-          </Text>
-        </View>
-        <View style={[styles.pill, { backgroundColor: colors.incomeBg }]}>
-          <Text style={[styles.pillLabel, { color: colors.income }]}>
-            Receitas: {formatBRL(ganhos)}
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.hint}>Toque para abrir · Segure para renomear/excluir</Text>
     </TouchableOpacity>
   );
 }
@@ -46,31 +51,27 @@ export default function ObraCard({ obra, gastos, ganhos, saldo, onPress, onLongP
 const makeStyles = (colors) => StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.md,
     padding: spacing.lg,
     marginBottom: spacing.md,
-    ...shadow,
   },
-  header: {
+  topo: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  nome: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    flex: 1,
-    marginRight: spacing.sm,
+  nome: { ...type.titulo, color: colors.textStrong, flex: 1 },
+  saldo: { ...type.valor, ...tabular, marginTop: spacing.sm },
+  meta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.lg,
+    marginTop: spacing.sm,
   },
-  saldo: { fontSize: 16, fontWeight: 'bold' },
-  row: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
-  pill: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-  },
-  pillLabel: { fontSize: 12, fontWeight: '600' },
-  hint: { fontSize: 11, color: colors.textFaint, marginTop: spacing.xs },
+  metaItem: { ...type.meta },
+  metaLabel: { color: colors.textMuted },
+  metaValor: { ...tabular, fontWeight: '600' },
 });

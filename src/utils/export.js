@@ -15,7 +15,7 @@ const createCSV = (obras, transactions) => {
     const obraTransactions = transactions.filter((t) => t.categoria === obra.nome);
 
     // Cabeçalho da obra
-    csv += `\n📊 OBRA: ${obra.nome}\n`;
+    csv += `\nOBRA: ${obra.nome}\n`;
     csv += `Criada em: ${formatDate(obra.criadoEm)}\n`;
     csv += `${'='.repeat(80)}\n`;
 

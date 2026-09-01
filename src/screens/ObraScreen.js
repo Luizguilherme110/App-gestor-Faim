@@ -12,10 +12,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Dashboard from '../components/Dashboard';
+import Icon from '../components/Icon';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
 import BottomSheet, { SheetOption } from '../components/BottomSheet';
-import { radius, spacing, useTheme } from '../theme/theme';
+import { radius, spacing, type, useTheme } from '../theme/theme';
 import { exportarObraCSV, exportarObraPDF } from '../utils/exportObra';
 
 // Tela dedicada para uma obra específica.
@@ -86,7 +87,12 @@ export default function ObraScreen({
 
   const header = (
     <View>
-      <Dashboard totalGastos={totalGastos} totalGanhos={totalGanhos} saldo={saldo} />
+      <Dashboard
+        totalGastos={totalGastos}
+        totalGanhos={totalGanhos}
+        saldo={saldo}
+        labelSaldo="Saldo desta obra"
+      />
       <TransactionForm
         editing={editing}
         obraFixa={obra.nome}
@@ -95,16 +101,22 @@ export default function ObraScreen({
         onCancelEdit={() => setEditing(null)}
       />
       <View style={styles.historicoRow}>
-        <Text style={styles.historicoTitle}>Movimentações — {obra.nome}</Text>
+        {/* O nome da obra já está na barra de navegação — repetir aqui só
+            encurtaria o espaço do título sem informar nada. */}
+        <Text style={styles.historicoTitle}>Movimentações</Text>
         <TouchableOpacity
           style={[styles.btnExportar, exportando && styles.btnDisabled]}
           onPress={() => setExportMenu(true)}
           disabled={exportando}
+          activeOpacity={0.7}
         >
           {exportando ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text style={styles.btnExportarTxt}>📤 Exportar</Text>
+            <>
+              <Icon name="share" size={15} color={colors.primary} />
+              <Text style={styles.btnExportarTxt}>Exportar</Text>
+            </>
           )}
         </TouchableOpacity>
       </View>
@@ -117,8 +129,14 @@ export default function ObraScreen({
 
       {/* Barra de navegação de volta */}
       <View style={styles.navbar}>
-        <TouchableOpacity style={styles.btnVoltar} onPress={onVoltar}>
-          <Text style={styles.btnVoltarTxt}>← Obras</Text>
+        <TouchableOpacity
+          style={styles.btnVoltar}
+          onPress={onVoltar}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar para a lista de obras"
+        >
+          <Icon name="chevron-left" size={20} color={colors.primary} />
+          <Text style={styles.btnVoltarTxt}>Obras</Text>
         </TouchableOpacity>
         <Text style={styles.navTitulo} numberOfLines={1}>{obra.nome}</Text>
         <View style={styles.navSpacer} />
@@ -147,17 +165,17 @@ export default function ObraScreen({
       <BottomSheet
         visible={exportMenu}
         onClose={() => setExportMenu(false)}
-        titulo={`Exportar — ${obra.nome}`}
-        subtitulo="Em qual formato deseja salvar as movimentações desta obra?"
+        titulo="Exportar movimentações"
+        subtitulo={obra.nome}
       >
         <SheetOption
-          icone="📊"
-          titulo="Excel (planilha)"
-          descricao="Arquivo CSV para abrir no Excel"
+          icone="grid"
+          titulo="Planilha do Excel"
+          descricao="Arquivo CSV para fazer os cálculos"
           onPress={exportarExcel}
         />
         <SheetOption
-          icone="📄"
+          icone="file-text"
           titulo="PDF"
           descricao="Documento pronto para imprimir ou enviar"
           onPress={exportarPDF}
@@ -175,49 +193,43 @@ const makeStyles = (colors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.bg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    minHeight: 56,
   },
   btnVoltar: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    minWidth: 80,
-    justifyContent: 'center',
-    marginLeft: -spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingRight: spacing.md,
+    minWidth: 84,
   },
-  btnVoltarTxt: { color: colors.primary, fontWeight: '600', fontSize: 15 },
-  navTitulo: {
-    flex: 1,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: colors.text,
-  },
-  navSpacer: { width: 60 }, // balanceia o botão de voltar
+  btnVoltarTxt: { ...type.corpoForte, color: colors.primary },
+  navTitulo: { ...type.corpoForte, flex: 1, textAlign: 'center', color: colors.textStrong },
+  navSpacer: { width: 84 }, // balanceia o botão de voltar
   historicoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: spacing.xl,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  historicoTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textMuted,
-  },
+  historicoTitle: { ...type.titulo, flex: 1, color: colors.textStrong },
   btnExportar: {
-    backgroundColor: colors.primaryBg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
-    minHeight: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
+    minHeight: 40,
   },
   btnDisabled: { opacity: 0.6 },
-  btnExportarTxt: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
+  btnExportarTxt: { ...type.meta, fontWeight: '700', color: colors.primary },
 });

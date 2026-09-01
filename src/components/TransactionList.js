@@ -1,6 +1,7 @@
 import React, { forwardRef, useCallback, useMemo } from 'react';
-import { Alert, FlatList, StyleSheet, Text } from 'react-native';
-import { spacing, useTheme } from '../theme/theme';
+import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import Icon from './Icon';
+import { spacing, type, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 import TransactionItem from './TransactionItem';
 
@@ -16,7 +17,7 @@ const TransactionList = forwardRef(function TransactionList(
     (item) => {
       Alert.alert(
         'Excluir registro',
-        `Remover "${item.categoria}" (${formatBRL(item.valor)})?`,
+        `Remover "${item.observacao?.trim() || item.categoria}" (${formatBRL(item.valor)})?`,
         [
           { text: 'Cancelar', style: 'cancel' },
           {
@@ -56,7 +57,13 @@ const TransactionList = forwardRef(function TransactionList(
       maxToRenderPerBatch={20}
       windowSize={7}
       ListEmptyComponent={
-        <Text style={styles.empty}>Nenhum registro feito ainda.</Text>
+        <View style={styles.vazio}>
+          <Icon name="file-text" size={26} color={colors.textFaint} />
+          <Text style={styles.vazioTitulo}>Nenhum lançamento ainda</Text>
+          <Text style={styles.vazioSub}>
+            Use o formulário acima para registrar o primeiro gasto ou venda.
+          </Text>
+        </View>
       }
     />
   );
@@ -65,10 +72,13 @@ const TransactionList = forwardRef(function TransactionList(
 export default TransactionList;
 
 const makeStyles = (colors) => StyleSheet.create({
-  content: { paddingBottom: spacing.xl },
-  empty: {
-    textAlign: 'center',
-    color: colors.textFaint,
-    marginTop: spacing.xl,
+  content: { paddingBottom: spacing.xxl },
+  vazio: {
+    alignItems: 'center',
+    paddingTop: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
+  vazioTitulo: { ...type.corpoForte, color: colors.text },
+  vazioSub: { ...type.meta, color: colors.textMuted, textAlign: 'center' },
 });

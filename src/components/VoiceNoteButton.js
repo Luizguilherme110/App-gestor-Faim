@@ -4,7 +4,8 @@ import {
 } from 'expo-speech-recognition';
 import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { radius, spacing, useTheme } from '../theme/theme';
+import Icon from './Icon';
+import { radius, spacing, type, useTheme } from '../theme/theme';
 
 export default function VoiceNoteButton({ onTranscribed }) {
   const { colors } = useTheme();
@@ -75,8 +76,12 @@ export default function VoiceNoteButton({ onTranscribed }) {
       onPress={handlePress}
       activeOpacity={0.75}
     >
-      <Text style={styles.icon}>{gravando ? '🛑' : '🎤'}</Text>
-      <Text style={styles.label}>
+      <Icon
+        name={gravando ? 'square' : 'mic'}
+        size={18}
+        color={gravando ? colors.expense : colors.textMuted}
+      />
+      <Text style={[styles.label, gravando && { color: colors.expense }]}>
         {gravando ? 'Ouvindo… toque para parar' : 'Falar anotação'}
       </Text>
     </TouchableOpacity>
@@ -87,17 +92,19 @@ const makeStyles = (colors) => StyleSheet.create({
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBg,
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
     marginBottom: spacing.sm,
+    minHeight: 48,
   },
   btnGravando: {
-    backgroundColor: '#fecaca',
-    borderWidth: 2,
+    backgroundColor: colors.recording,
     borderColor: colors.expense,
   },
-  icon: { fontSize: 18, marginRight: spacing.sm },
-  label: { fontSize: 14, color: colors.text, fontWeight: '500' },
+  label: { ...type.corpo, color: colors.text },
 });

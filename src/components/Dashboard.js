@@ -1,84 +1,77 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { radius, shadow, spacing, useTheme } from '../theme/theme';
+import { radius, spacing, tabular, type, useTheme } from '../theme/theme';
 import { formatBRL } from '../utils/currency';
 
-// Painel de resumo (gastos, vendas e saldo). Componente puro de apresentação.
-export default function Dashboard({ totalGastos, totalGanhos, saldo }) {
+// Painel de resumo financeiro. Componente puro de apresentação, usado tanto na
+// HomeScreen (totais de todas as obras) quanto na ObraScreen (uma obra só).
+//
+// O saldo é a resposta que o usuário abre o app para ver, então ele é o número
+// grande no topo. Gastos e vendas ficam abaixo, como decomposição, separados
+// por uma linha em vez de caixas coloridas.
+export default function Dashboard({
+  totalGastos,
+  totalGanhos,
+  saldo,
+  labelSaldo = 'Saldo disponível',
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const saldoNegativo = saldo < 0;
+  const corSaldo = saldo < 0 ? colors.expense : colors.income;
 
   return (
-    <View style={styles.dashboard}>
-      <Text style={styles.title}>Gestão de Obras & Vendas</Text>
+    <View style={styles.painel}>
+      <Text style={styles.saldoLabel}>{labelSaldo}</Text>
+      <Text style={[styles.saldoValor, { color: corSaldo }]} numberOfLines={1} adjustsFontSizeToFit>
+        {formatBRL(saldo)}
+      </Text>
 
-      <View style={styles.cards}>
-        <View style={[styles.card, { backgroundColor: colors.expenseBg }]}>
-          <Text style={styles.cardLabel}>Gastos Obras</Text>
-          <Text style={[styles.cardValue, { color: colors.expense }]}>
+      <View style={styles.divisor} />
+
+      <View style={styles.linha}>
+        <View style={styles.coluna}>
+          <Text style={styles.colunaLabel}>Gastos</Text>
+          <Text style={[styles.colunaValor, { color: colors.expense }]} numberOfLines={1}>
             {formatBRL(totalGastos)}
           </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.incomeBg }]}>
-          <Text style={styles.cardLabel}>Vendas Planta</Text>
-          <Text style={[styles.cardValue, { color: colors.income }]}>
+        <View style={styles.separadorVertical} />
+
+        <View style={styles.coluna}>
+          <Text style={styles.colunaLabel}>Vendas na planta</Text>
+          <Text style={[styles.colunaValor, { color: colors.income }]} numberOfLines={1}>
             {formatBRL(totalGanhos)}
           </Text>
         </View>
       </View>
-
-      <Text style={styles.saldoLabel}>
-        Saldo Disponível:{' '}
-        <Text
-          style={[
-            styles.saldoValue,
-            { color: saldoNegativo ? colors.expense : colors.income },
-          ]}
-        >
-          {formatBRL(saldo)}
-        </Text>
-      </Text>
     </View>
   );
 }
 
 const makeStyles = (colors) => StyleSheet.create({
-  dashboard: {
+  painel: {
     backgroundColor: colors.surface,
-    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.md,
-    marginTop: spacing.md,
-    ...shadow,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.md,
-    textAlign: 'center',
+  saldoLabel: { ...type.meta, color: colors.textMuted },
+  saldoValor: { ...type.display, ...tabular, marginTop: spacing.xs },
+  divisor: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.lg,
   },
-  cards: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+  linha: { flexDirection: 'row', alignItems: 'stretch' },
+  coluna: { flex: 1 },
+  separadorVertical: {
+    width: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.lg,
   },
-  card: {
-    flex: 1,
-    padding: spacing.md,
-    borderRadius: radius.sm,
-    marginHorizontal: spacing.xs,
-    alignItems: 'center',
-  },
-  cardLabel: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
-  cardValue: { fontSize: 16, fontWeight: 'bold', marginTop: spacing.xs },
-  saldoLabel: {
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 15,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  saldoValue: { fontWeight: 'bold' },
+  colunaLabel: { ...type.micro, color: colors.textMuted },
+  colunaValor: { ...type.valor, ...tabular, marginTop: 2 },
 });
